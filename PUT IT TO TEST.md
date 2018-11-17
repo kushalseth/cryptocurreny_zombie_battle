@@ -192,3 +192,496 @@ Now that we've set up a multi-file structure, we need to use import to read the 
 ```
 
 > Chapter 7: Storage vs Memory
+
+```
+It's time to give our zombies the ability to feed and multiply!
+
+When a zombie feeds on some other lifeform, its DNA will combine with the other lifeform's DNA to create a new zombie.
+
+    Create a function called feedAndMultiply. It will take two parameters: _zombieId (a uint) and _targetDna (also a uint). This function should be public.
+
+    We don't want to let someone else feed using our zombie! So first, let's make sure we own this zombie. Add a require statement to make sure msg.sender is equal to this zombie's owner (similar to how we did in the createRandomZombie function).
+
+
+    We're going to need to get this zombie's DNA. So the next thing our function should do is declare a local Zombie named myZombie (which will be a storage pointer). Set this variable to be equal to index _zombieId in our zombies array.
+
+```
+
+> Chapter 8: Zombie DNA
+
+```
+
+
+    First we need to make sure that _targetDna isn't longer than 16 digits. To do this, we can set _targetDna equal to _targetDna % dnaModulus to only take the last 16 digits.
+
+    Next our function should declare a uint named newDna, and set it equal to the average of myZombie's DNA and _targetDna (as in the example above).
+
+        Note: You can access the properties of myZombie using myZombie.name and myZombie.dna
+
+    Once we have the new DNA, let's call _createZombie. You can look at the zombiefactory.sol tab if you forget which parameters this function needs to call it. Note that it requires a name, so let's set our new zombie's name to "NoName" for now — we can write a function to change zombies' names later.
+
+```
+
+> Chapter 9: More on Function Visibility
+
+```
+Change _createZombie() from private to internal so our other contract can access it.
+```
+
+> Chapter 10: What Do Zombies Eat?
+
+```
+Now that we know what this function looks like, we can use it to create an interface:
+
+    Define an interface called KittyInterface. Remember, this looks just like creating a new contract — we use the contract keyword.
+
+    Inside the interface, define the function getKitty (which should be a copy/paste of the function above, but with a semi-colon after the returns statement, instead of everything inside the curly braces.
+
+```
+
+> Chapter 11: Using an Interface
+
+```
+I've saved the address of the CryptoKitties contract in the code for you, under a variable named ckAddress. In the next line, create a KittyInterface named kittyContract, and initialize it with ckAddress — just like we did with numberContract above.
+```
+
+> Chapter 12: Handling Multiple Return Values
+
+```
+Time to interact with the CryptoKitties contract!
+
+Let's make a function that gets the kitty genes from the contract:
+
+    Make a function called feedOnKitty. It will take 2 uint parameters, _zombieId and _kittyId, and should be a public function.
+
+    The function should first declare a uint named kittyDna.
+
+        Note: In our KittyInterface, genes is a uint256 — but if you remember back to lesson 1, uint is an alias for uint256 — they're the same thing.
+
+    The function should then call the kittyContract.getKitty function with _kittyId and store genes in kittyDna. Remember — getKitty returns a ton of variables. (10 to be exact — I'm nice, I counted them for you!). But all we care about is the last one, genes. Count your commas carefully!
+
+    Finally, the function should call feedAndMultiply, and pass it both _zombieId and kittyDna.
+
+```
+
+> Chapter 13: Bonus: Kitty Genes
+
+```
+Let's implement cat genes in our zombie code.
+
+    First, let's change the function definition for feedAndMultiply so it takes a 3rd argument: a string named _species
+
+    Next, after we calculate the new zombie's DNA, let's add an if statement comparing the keccak256 hashes of _species and the string "kitty". We can't directly pass strings to keccak256. Instead, we will pass abi.encodePacked(_species) as an argument on the left side and abi.encodePacked("kitty") as an argument on the right side.
+
+    Inside the if statement, we want to replace the last 2 digits of DNA with 99. One way to do this is using the logic: newDna = newDna - newDna % 100 + 99;.
+
+        Explanation: Assume newDna is 334455. Then newDna % 100 is 55, so newDna - newDna % 100 is 334400. Finally add 99 to get 334499.
+
+    Lastly, we need to change the function call inside feedOnKitty. When it calls feedAndMultiply, add the parameter "kitty" to the end.
+
+```
+
+> Chapter 14: Wrapping It Up
+
+
+
+##### LESSON 3: Advanced Solidity Concepts (REVISION NOTES)
+
+> Chapter 1: Immutability of Contracts
+
+```
+Let's update our code from Lesson 2 to be able to change the CryptoKitties contract address.
+
+    Delete the line of code where we hard-coded ckAddress.
+
+    Change the line where we created kittyContract to just declare the variable — i.e. don't set it equal to anything.
+
+    Create a function called setKittyContractAddress. It will take one argument, _address (an address), and it should be an external function.
+
+    Inside the function, add one line of code that sets kittyContract equal to KittyInterface(_address).
+
+```
+
+> Chapter 2: Ownable Contracts
+
+```
+We've gone ahead and copied the code of the Ownable contract into a new file, ownable.sol. Let's go ahead and make ZombieFactory inherit from it.
+
+    Modify our code to import the contents of ownable.sol. If you don't remember how to do this take a look at zombiefeeding.sol.
+
+    Modify the ZombieFactory contract to inherit from Ownable. Again, you can take a look at zombiefeeding.sol if you don't remember how this is done.
+
+```
+
+> Chapter 3: onlyOwner Function Modifier
+
+```
+add onlyOwner to setKittyContractAddress
+```
+
+> Chapter 4: Gas
+
+```
+In this lesson, we're going to add 2 new features to our zombies: level and readyTime — the latter will be used to implement a cooldown timer to limit how often a zombie can feed.
+
+So let's jump back to zombiefactory.sol.
+
+    Add two more properties to our Zombie struct: level (a uint32), and readyTime (also a uint32). We want to pack these data types together, so let's put them at the end of the struct.
+
+32 bits is more than enough to hold the zombie's level and timestamp, so this will save us some gas costs by packing the data more tightly than using a regular uint (256-bits).
+```
+
+> Chapter 5: Time Units
+
+```
+Let's add a cooldown time to our DApp, and make it so zombies have to wait 1 day after attacking or feeding to attack again.
+
+    Declare a uint called cooldownTime, and set it equal to 1 days. (Forgive the poor grammar — if you set it equal to "1 day", it won't compile!)
+
+    Since we added a level and readyTime to our Zombie struct in the previous chapter, we need to update _createZombie() to use the correct number of arguments when we create a new Zombie struct.
+
+    Update the zombies.push line of code to add 2 more arguments: 1 (for level), and uint32(now + cooldownTime) (for readyTime).
+
+    Note: The uint32(...) is necessary because now returns a uint256 by default. So we need to explicitly convert it to a uint32.
+
+now + cooldownTime will equal the current unix timestamp (in seconds) plus the number of seconds in 1 day — which will equal the unix timestamp 1 day from now. Later we can compare to see if this zombie's readyTime is greater than now to see if enough time has passed to use the zombie again.
+
+We'll implement the functionality to limit actions based on readyTime in the next chapter.
+```
+
+> Chapter 6: Zombie Cooldowns
+
+```
+Put it to the test
+
+    Start by defining a _triggerCooldown function. It will take 1 argument, _zombie, a Zombie storage pointer. The function should be internal.
+
+    The function body should set _zombie.readyTime to uint32(now + cooldownTime).
+
+    Next, create a function called _isReady. This function will also take a Zombie storage argument named _zombie. It will be an internal view function, and return a bool.
+
+    The function body should return (_zombie.readyTime <= now), which will evaluate to either true or false. This function will tell us if enough time has passed since the last time the zombie fed.
+
+```
+
+> Chapter 7: Public Functions & Security
+
+```
+
+
+    Currently feedAndMultiply is a public function. Let's make it internal so that the contract is more secure. We don't want users to be able to call this function with any DNA they want.
+
+    Let's make feedAndMultiply take our cooldownTime into account. First, after we look up myZombie, let's add a require statement that checks _isReady() and passes myZombie to it. This way the user can only execute this function if a zombie's cooldown time is over.
+
+    At the end of the function let's call _triggerCooldown(myZombie) so that feeding triggers the zombie's cooldown time.
+
+```
+
+> Chapter 8:
+
+```
+
+
+    In ZombieHelper, create a modifier called aboveLevel. It will take 2 arguments, _level (a uint) and _zombieId (also a uint).
+
+    The body should check to make sure zombies[_zombieId].level is greater than or equal to _level.
+
+    Remember to have the last line of the modifier call the rest of the function with _;.
+
+```
+
+> Chapter 9: Zombie Modifiers
+
+```
+
+
+    Create a function called changeName. It will take 2 arguments: _zombieId (a uint), and _newName (a string), and make it external. It should have the aboveLevel modifier, and should pass in 2 for the _level parameter. (Don't forget to also pass the _zombieId).
+
+    In this function, first we need to verify that msg.sender is equal to zombieToOwner[_zombieId]. Use a require statement.
+
+    Then the function should set zombies[_zombieId].name equal to _newName.
+
+    Create another function named changeDna below changeName. Its definition and contents will be almost identical to changeName, except its second argument will be _newDna (a uint), and it should pass in 20 for the _level parameter on aboveLevel. And of course, it should set the zombie's dna to _newDna instead of setting the zombie's name.
+
+```
+
+> Chapter 10: Saving Gas With 'View' Functions
+
+```
+We're going to implement a function that will return a user's entire zombie army. We can later call this function from web3.js if we want to display a user profile page with their entire army.
+
+This function's logic is a bit complicated so it will take a few chapters to implement.
+
+    Create a new function named getZombiesByOwner. It will take one argument, an address named _owner.
+
+    Let's make it an external view function, so we can call it from web3.js without needing any gas.
+
+    The function should return a uint[] (an array of uint).
+
+Leave the function body empty for now, we'll fill it in in the next chapter.
+```
+
+> Chapter 11: Storage is Expensive
+
+```
+In our getZombiesByOwner function, we want to return a uint[] array with all the zombies a particular user owns.
+
+    Declare a uint[] memory variable called result
+
+    Set it equal to a new uint array. The length of the array should be however many zombies this _owner owns, which we can look up from our mapping with: ownerZombieCount[_owner].
+
+    At the end of the function return result. It's just an empty array right now, but in the next chapter we'll fill it in.
+
+```
+
+> Chapter 12: For Loops
+
+```
+Let's finish our getZombiesByOwner function by writing a for loop that iterates through all the zombies in our DApp, compares their owner to see if we have a match, and pushes them to our result array before returning it.
+
+    Declare a uint called counter and set it equal to 0. We'll use this variable to keep track of the index in our result array.
+
+    Declare a for loop that starts from uint i = 0 and goes up through i < zombies.length. This will iterate over every zombie in our array.
+
+    Inside the for loop, make an if statement that checks if zombieToOwner[i] is equal to _owner. This will compare the two addresses to see if we have a match.
+
+    Inside the if statement:
+        Add the zombie's ID to our result array by setting result[counter] equal to i.
+        Increment counter by 1 (see the for loop example above).
+
+That's it — the function will now return all the zombies owned by _owner without spending any gas.
+```
+
+> Chapter 13:
+
+```
+```
+
+> Chapter 14:
+
+```
+```
+
+##### LESSON 4:  Zombie Battle System (REVISION NOTES)  
+> Chapter 1:
+
+```
+```
+
+> Chapter 2:
+
+
+```
+```
+
+> Chapter 3:
+
+```
+```
+
+> Chapter 4:
+
+```
+```
+
+> Chapter 5:
+
+```
+```
+
+> Chapter 6:
+
+```
+```
+
+> Chapter 7:
+
+```
+```
+
+> Chapter 8:
+
+```
+```
+
+> Chapter 9:
+
+```
+```
+
+> Chapter 10:
+
+```
+```
+
+> Chapter 11:
+
+```
+```
+
+> Chapter 12:
+
+```
+```
+
+> Chapter 13:
+
+```
+```
+
+> Chapter 14:
+
+```
+```
+
+
+
+##### LESSON 5:  ERC721 & Crypto-Collectibles (REVISION NOTES)  	
+> Chapter 1:
+
+```
+```
+
+> Chapter 2:
+
+
+```
+```
+
+> Chapter 3:
+
+```
+```
+
+> Chapter 4:
+
+```
+```
+
+> Chapter 5:
+
+```
+```
+
+> Chapter 6:
+
+```
+```
+
+> Chapter 7:
+
+```
+```
+
+> Chapter 8:
+
+```
+```
+
+> Chapter 9:
+
+```
+```
+
+> Chapter 10:
+
+```
+```
+
+> Chapter 11:
+
+```
+```
+
+> Chapter 12:
+
+```
+```
+
+> Chapter 13:
+
+```
+```
+
+> Chapter 14:
+
+```
+```
+
+
+
+
+
+##### LESSON 6:  App Front-ends & Web3.js (REVISION NOTES)  (REVISION NOTES)  	
+> Chapter 1:
+
+```
+```
+
+> Chapter 2:
+
+
+```
+```
+
+> Chapter 3:
+
+```
+```
+
+> Chapter 4:
+
+```
+```
+
+> Chapter 5:
+
+```
+```
+
+> Chapter 6:
+
+```
+```
+
+> Chapter 7:
+
+```
+```
+
+> Chapter 8:
+
+```
+```
+
+> Chapter 9:
+
+```
+```
+
+> Chapter 10:
+
+```
+```
+
+> Chapter 11:
+
+```
+```
+
+> Chapter 12:
+
+```
+```
+
+> Chapter 13:
+
+```
+```
+
+> Chapter 14:
+
+```
+```
+
+
