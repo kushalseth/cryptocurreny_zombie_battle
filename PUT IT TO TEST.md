@@ -463,63 +463,164 @@ That's it — the function will now return all the zombies owned by _owner witho
 ```
 
 ##### LESSON 4:  Zombie Battle System (REVISION NOTES)  
-> Chapter 1:
+> Chapter 1: Payable
+
+```
+Let's create a payable function in our zombie game.
+
+Let's say our game has a feature where users can pay ETH to level up their zombies. The ETH will get stored in the contract, which you own — this a simple example of how you could make money on your games!
+
+    Define a uint named levelUpFee, and set it equal to 0.001 ether.
+
+    Create a function named levelUp. It will take one parameter, _zombieId, a uint. It should be external and payable.
+
+    The function should first require that msg.value is equal to levelUpFee.
+
+    It should then increment this zombie's level: zombies[_zombieId].level++.
+
+```
+
+> Chapter 2: Withdraws
+
+
+```
+
+
+    Create a withdraw function in our contract, which should be identical to the GetPaid example above.
+
+    The price of Ether has gone up over 10x in the past year. So while 0.001 ether is about $1 at the time of this writing, if it goes up 10x again, 0.001 ETH will be $10 and our game will be a lot more expensive.
+
+    So it's a good idea to create a function that allows us as the owner of the contract to set the levelUpFee.
+
+    a. Create a function called setLevelUpFee that takes one argument, uint _fee, is external, and uses the modifier onlyOwner.
+
+    b. The function should set levelUpFee equal to _fee.
+
+```
+
+> Chapter 3: Zombie Battles
+
+```
+Let's review creating a new contract. Repetition leads to mastery!
+
+If you can't remember the syntax for doing these, check zombiehelper.sol for the syntax — but try to do it without peeking first to test your knowledge.
+
+    Declare at the top of the file that we're using Solidity version ^0.4.25.
+
+    import from zombiehelper.sol.
+
+    Declare a new contract called ZombieAttack that inherits from ZombieHelper. Leave the contract body empty for now.
+
+```
+
+> Chapter 4: Random Numbers
+
+```
+Let's implement a random number function we can use to determine the outcome of our battles, even if it isn't totally secure from attack.
+
+    Give our contract a uint called randNonce, and set it equal to 0.
+
+    Create a function called randMod (random-modulus). It will be an internal function that takes a uint named _modulus, and returns a uint.
+
+    The function should first increment randNonce (using the syntax randNonce++).
+
+    Finally, it should (in one line of code) calculate the uint typecast of the keccak256 hash of abi.encodePacked(now,msg.sender,randNonce) — and return that value % _modulus. (Whew! That was a mouthful. If you didn't follow that, just take a look at the example above where we generated a random number — the logic is very similar).
+
+```
+
+> Chapter 5: Zombie Fightin'
+
+```
+
+
+    Give our contract a uint variable called attackVictoryProbability, and set it equal to 70.
+
+    Create a function called attack. It will take two parameters: _zombieId (a uint) and _targetId (also a uint). It should be an external function.
+
+Leave the function body empty for now
+```
+
+> Chapter 6: Refactoring Common Logic
+
+```
+We're back to zombiefeeding.sol, since this is the first place we used that logic. Let's refactor it into its own modifier.
+
+    Create a modifier called ownerOf. It will take 1 argument, _zombieId (a uint).
+
+    The body should require that msg.sender is equal to zombieToOwner[_zombieId], then continue with the function. You can refer to zombiehelper.sol if you don't remember the syntax for a modifier.
+
+    Change the function definition of feedAndMultiply such that it uses the modifier ownerOf.
+
+    Now that we're using a modifier, you can remove the line require(msg.sender == zombieToOwner[_zombieId]);
+
+```
+
+> Chapter 7: More Refactoring
 
 ```
 ```
 
-> Chapter 2:
+> Chapter 8:  Back to Attack!
 
+```
+
+
+    Add the ownerOf modifier to attack to make sure the caller owns _zombieId.
+
+    The first thing our function should do is get a storage pointer to both zombies so we can more easily interact with them:
+
+    a. Declare a Zombie storage named myZombie, and set it equal to zombies[_zombieId].
+
+    b. Declare a Zombie storage named enemyZombie, and set it equal to zombies[_targetId].
+
+    We're going to use a random number between 0 and 99 to determine the outcome of our battle. So declare a uint named rand, and set it equal to the result of the randMod function with 100 as an argument.
+
+```
+
+> Chapter 9:  Zombie Wins and Losses
+
+```
+
+
+    Modify our Zombie struct to have 2 more properties:
+
+    a. winCount, a uint16
+
+    b. lossCount, also a uint16
+
+        Note: Remember, since we can pack uints inside structs, we want to use the smallest uints we can get away with. A uint8 is too small, since 2^8 = 256 — if our zombies attacked once per day, they could overflow this within a year. But 2^16 is 65536 — so unless a user wins or loses every day for 179 years straight, we should be safe here.
+
+    Now that we have new properties on our Zombie struct, we need to change our function definition in _createZombie().
+
+    Change the zombie creation definition so it creates each new zombie with 0 wins and 0 losses.
+
+```
+
+> Chapter 10: Zombie Victory 😄
+
+```
+
+
+    Create an if statement that checks if rand is less than or equal to attackVictoryProbability.
+
+    If this condition is true, our zombie wins! So:
+
+    a. Increment myZombie's winCount.
+
+    b. Increment myZombie's level. (Level up!!!!!!!)
+
+    c. Increment enemyZombie's lossCount. (Loser!!!!!! 😫 😫 😫)
+
+    d. Run the feedAndMultiply function. Check zombiefeeding.sol to see the syntax for calling it. For the 3rd argument (_species), pass the string "zombie". (It doesn't actually do anything at the moment, but later we could add extra functionality for spawning zombie-based zombies if we wanted to).
+
+```
+
+> Chapter 11: Zombie Loss 
 
 ```
 ```
 
-> Chapter 3:
-
-```
-```
-
-> Chapter 4:
-
-```
-```
-
-> Chapter 5:
-
-```
-```
-
-> Chapter 6:
-
-```
-```
-
-> Chapter 7:
-
-```
-```
-
-> Chapter 8:
-
-```
-```
-
-> Chapter 9:
-
-```
-```
-
-> Chapter 10:
-
-```
-```
-
-> Chapter 11:
-
-```
-```
-
-> Chapter 12:
+> Chapter 12: Wrapping It Up
 
 ```
 ```
@@ -540,17 +641,38 @@ That's it — the function will now return all the zombies owned by _owner witho
 > Chapter 1:
 
 ```
+Putting it to the Test
+
+We're going to dive into the ERC721 implementation in the next chapter. But first, let's set up our file structure for this lesson.
+
+We're going to store all the ERC721 logic in a contract called ZombieOwnership.
+
+    Declare our pragma version at the top of the file (check previous lessons' files for the syntax).
+
+    This file should import from zombieattack.sol.
+
+    Declare a new contract, ZombieOwnership, that inherits from ZombieAttack. Leave the body of the contract empty for now.
+
 ```
 
-> Chapter 2:
+> Chapter 2: ERC721 Standard, Multiple Inheritance
 
 
 ```
+impoert erc721
 ```
 
-> Chapter 3:
+> Chapter 3: balanceOf & ownerOf
 
 ```
+I'll leave it to you to figure out how to implement these 2 functions.
+
+Each function should simply be 1 line of code, a return statement. Take a look at our code from previous lessons to see where we're storing this data. If you can't figure it out, you can hit the "show me the answer" button for some help.
+
+    Implement balanceOf to return the number of zombies _owner has.
+
+    Implement ownerOf to return the address of whoever owns the zombie with ID _tokenId.
+
 ```
 
 > Chapter 4:
